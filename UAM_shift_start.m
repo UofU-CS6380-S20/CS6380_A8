@@ -1,4 +1,16 @@
 function n_flight = UAM_shift_start(flight,delay)
+% UAM_shift_start - delay start by delay
+% On input:
+%     flight (flight struct): flight info
+%     delay (float): amount to delay flight
+% On output:
+%     n_flight (flight struct): new flight info
+% Call:
+%     nf = UAM_shift_start(f1,0.1);
+% Author:
+%     T. Henderson
+%     UU
+%     Spring 2020
 %
 
 n_flight = flight;

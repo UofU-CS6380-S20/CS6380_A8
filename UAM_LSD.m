@@ -1,4 +1,4 @@
-function possible = UAM_LSD(possible0,speed,lane_list,lane_lengths,...
+function [possible,d_count] = UAM_LSD(possible0,speed,lane_list,lane_lengths,...
     flights,ht)
 % UAM_LSD - provide possible strategically deconflicted
 %      launch time intervals given a requested interval and the
@@ -13,8 +13,9 @@ function possible = UAM_LSD(possible0,speed,lane_list,lane_lengths,...
 % On output:
 %     possible (nx2 array): each row is a continuous interval of possible
 %        starting flight times
+%     d_count (int): sum(f_k*num_intervals_k)
 % Call:
-%     inters = UAM_LSD([4,35],2,[13,6,14],[10,15,10],fl,5);
+%     [inters,dc] = UAM_LSD([4,35],2,[13,6,14],[10,15,10],fl,5);
 % Author:
 %     T. Henderson
 %     UU
@@ -23,6 +24,7 @@ function possible = UAM_LSD(possible0,speed,lane_list,lane_lengths,...
 
 len_lane_list = length(lane_list);
 intervals = possible0;
+d_count = 0;
 offset = 0;
 c = 0;
 total_time = 0;
@@ -48,8 +50,6 @@ while ~isempty(intervals)&c<len_lane_list
             ts2 = c_flights(f,2);
             tr1e = tr1 + dc/speed;
             tr2e = tr2 + dc/speed;
-            %            tr1e = tr1 + ceil(dc/speed);
-            %            tr2e = tr2 + ceil(dc/speed);
             if ~((ts1+ht<=tr1&ts2+ht<=tr1e)|(ts1-ht>=tr2&ts2-ht>=tr2e))
                 new_intervals = [];
                 for k = 1:num_intervals
@@ -59,6 +59,7 @@ while ~isempty(intervals)&c<len_lane_list
                     new_intervals = UAM_merge_intervals(k_intervals,...
                         new_intervals);
                 end
+                d_count = d_count + num_intervals;
                 intervals = new_intervals;
                 if isempty(intervals)
                     num_intervals = 0;

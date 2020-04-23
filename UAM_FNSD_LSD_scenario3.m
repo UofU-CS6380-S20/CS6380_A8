@@ -1,7 +1,7 @@
 function [airways,lane_flights,flights,flights_FN] = ...
-    UAM_FNSD_LSD_scenario1(min_start,max_start,min_speed,max_speed,...
+    UAM_FNSD_LSD_scenario3(min_start0,max_start0,min_speed,max_speed,...
     num_flights,del_t,h_t)
-% UAM_FNSD_LSD_scenario1 - compare FAA-NASA SD with Lane SD
+% UAM_FNSD_LSD_scenario3 - compare FAA-NASA SD with Lane SD
 % On input:
 %     min_start (float): earliest start time
 %     max_start (float): latest start time
@@ -33,7 +33,7 @@ function [airways,lane_flights,flights,flights_FN] = ...
 %       (k).lanes
 %       (k).speed)
 % Call:
-%     [aa,ff,ffFN] = UAM_FNSD_LSD_scenario1(0,60,0.1,0.31,100,0.1,1);
+%     [aa,ff,ffFN] = UAM_FNSD_LSD_scenario3(0,60,0.1,0.31,100,0.1,1);
 % Author:
 %     T. Henderson
 %     UU
@@ -44,6 +44,7 @@ LOWER_ALTITUDE = 10;
 UPPER_ALTITUDE = 12;
 M = 100;
 N = 100;
+MAX_START_INTERVAL = 100;
 
 grid_x = 20;
 
@@ -58,12 +59,14 @@ lane_flights = [];
 flights = [];
 for f = 1:num_flights
     waitbar(f/num_flights);
-%    launch_index = randi(num_ground_vertexes);
-%    land_index = randi(num_ground_vertexes);
-    launch_index = 1;
-    land_index = 36;
-%    speed = min_speed+rand*(max_speed-min_speed);
-    speed = 0.12;
+    launch_index = randi(num_ground_vertexes);
+    land_index = randi(num_ground_vertexes);
+%    launch_index = 1;
+%    land_index = 36;
+    speed = min_speed+rand*(max_speed-min_speed);
+%    speed = 0.12;
+    min_start = min_start0 + rand*(max_start0-min_start0);
+    max_start = min_start + rand*MAX_START_INTERVAL;
     lanes = UAM_flight_path(airways,launch_index,land_index);
     flights(f).length = sum(airways.lane_lengths(lanes));
     tic;
@@ -105,8 +108,7 @@ for f = 1:num_flights
         land_lane = flights(f).flight_path(end,4);
         launch_pt = lanes(launch_lane,1:3);
         land_pt = lanes(land_lane,4:6);
-%        altitude = LOWER_ALTITUDE + rand*(UPPER_ALTITUDE-LOWER_ALTITUDE);
-        altitude = 11;
+        altitude = LOWER_ALTITUDE + rand*(UPPER_ALTITUDE-LOWER_ALTITUDE);
         pt1 = launch_pt;
         pt4 = land_pt;
         pt2 = [pt1(1:2),altitude];
@@ -148,17 +150,17 @@ num_flights_FN = length(flights_FN);
 s_flights = [];
 wb = waitbar(0,'FN Deconflict');
 %for f = 1:num_flights_FN
-for f = 1:num_flights
-    f
+wt_val = 0;
+f = 0;
+while wt_val<10
+    f = f + 1;
     waitbar(f/num_flights);
     if ~isempty(flights_FN(f).traj)
         n_flight = flights_FN(f);
         tic;
         n_flight = UAM_deconflict(s_flights,n_flight,del_t,h_t);
         n_flight.d_time = toc;
-        if n_flight.d_time>10
-            tch = 0;
-        end
+        wt_val = n_flight.d_time;
         flights_FN(f) = n_flight;
         s_flights = flights_FN(1:f);
     end

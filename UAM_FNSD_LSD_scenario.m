@@ -49,7 +49,7 @@ grid_x = 10;
 
 h_x = max_speed*h_t;
 
-airways = UAM_create_airway_demo;
+airways = UAM_create_airway_demo_diags;
 num_ground_vertexes = length(airways.vertexes(:,1));
 
 display('Create flights');
@@ -62,8 +62,8 @@ for f = 1:num_flights
     land_index = randi(num_ground_vertexes);
     launch_index = 1;
     land_index = 25;
-    speed = min_speed+rand*(max_speed-min_speed);
-%    speed = 0.12;
+%    speed = min_speed+rand*(max_speed-min_speed);
+    speed = 0.12;
     lanes = UAM_flight_path(airways,launch_index,land_index);
     [flight_path,d_count,lane_flights] = UAM_reserve_flight(airways,...
         lane_flights,min_start,max_start,speed,lanes,f,h_t);
@@ -84,16 +84,19 @@ end
 close(wb);
 
 lanes = airways.lanes;
-x_min = min([lanes(:,1);lanes(:,4)]);
-x_max = max([lanes(:,1);lanes(:,4)]);
-y_min = min([lanes(:,2);lanes(:,5)]);
-y_max = max([lanes(:,2);lanes(:,5)]);
+grid.x_min = min([airways.lanes(:,1);airways.lanes(:,4)])-10;
+grid.x_max = max([airways.lanes(:,1);airways.lanes(:,4)])+10;
+grid.y_min = min([airways.lanes(:,2);airways.lanes(:,5)])-10;
+grid.y_max = max([airways.lanes(:,2);airways.lanes(:,5)])+10;
+grid.del_x = 20;
+grid.del_y = 20;
 wb = waitbar(0,'Create FN Flights');
 for f = 1:num_flights
     waitbar(f/num_flights);
     if flights(f).start_time>=0
         flights_FN(f).speed = flights(f).flight_path(1,3);
-        flights_FN(f).start_time = flights(f).start_time;
+%        flights_FN(f).start_time = flights(f).start_time;
+        flights_FN(f).start_time = min_start;
         launch_lane = flights(f).flight_path(1,4);
         land_lane = flights(f).flight_path(end,4);
         launch_pt = lanes(launch_lane,1:3);
@@ -126,8 +129,13 @@ for f = 1:num_flights
         flights_FN(f).d_count = 0;
         flights_FN(f).end_time = flights(f).start_time...
             + total_len/flights_FN(f).speed;
-        flights_FN(f).grid_els = UAM_grid_els(traj(1,1:3),traj(end,4:6),...
-            x_min,y_min,x_max,y_max,grid_x,M,N);
+        flights_FN(f).grid_els = UAM_grid_els(grid,traj(1,1:3),...
+            traj(end,4:6),M,N);
+        flights_FN(f).d_time = 0;
+        flights_FN(f).grid_count = 0;
+        flights_FN(f).pinch_count = 0;
+        flights_FN(f).space_count = 0;
+        flights_FN(f).time_count = 0;
     end
 end
 close(wb);
@@ -138,7 +146,9 @@ for f = 1:num_flights_FN
     waitbar(f/num_flights);
     if ~isempty(flights_FN(f).traj)
         n_flight = flights_FN(f);
+        tic;
         n_flight = UAM_deconflict(s_flights,n_flight,del_t,h_t);
+        n_flight.d_time = toc;
         flights_FN(f) = n_flight;
         s_flights = flights_FN(1:f);
     end
